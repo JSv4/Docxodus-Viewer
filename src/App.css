@@ -275,6 +275,10 @@ input[type="file"] {
   color: #e74c3c;
 }
 
+.stat.move {
+  color: #9b59b6;
+}
+
 /* Document content */
 .document-content {
   border: 1px solid #e0e0e0;
@@ -421,6 +425,10 @@ input[type="file"] {
   border-left: 4px solid #e74c3c;
 }
 
+.revision-item.move {
+  border-left: 4px solid #9b59b6;
+}
+
 .revision-header {
   display: flex;
   align-items: center;
@@ -449,6 +457,11 @@ input[type="file"] {
   color: #721c24;
 }
 
+.revision-type.move {
+  background: #e8daef;
+  color: #5b2c6f;
+}
+
 .revision-author {
   font-weight: 500;
   color: #2c3e50;
@@ -469,6 +482,87 @@ input[type="file"] {
 
 .revision-text em {
   color: #888;
+}
+
+.move-group-badge {
+  padding: 0.15rem 0.4rem;
+  background: #e8daef;
+  color: #5b2c6f;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.move-pair-info {
+  padding: 0.5rem 0.75rem;
+  background: #f8f5fa;
+  border-top: 1px solid #e8daef;
+  font-size: 0.85rem;
+  color: #5b2c6f;
+  font-style: italic;
+}
+
+/* Advanced options */
+.toggle-advanced-btn {
+  background: none;
+  border: none;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #3498db;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.toggle-advanced-btn:hover {
+  color: #2980b9;
+}
+
+.advanced-options {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.text-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  max-width: 250px;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.textarea-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: monospace;
+  resize: vertical;
+  max-width: 400px;
+}
+
+.textarea-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 /* Responsive */

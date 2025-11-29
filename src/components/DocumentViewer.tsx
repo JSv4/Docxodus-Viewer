@@ -9,8 +9,15 @@ export function DocumentViewer() {
   const { html, isConverting, error, convert, clear } = useConversion(WASM_BASE_PATH);
   const [fileName, setFileName] = useState<string>('');
   const [commentMode, setCommentMode] = useState<CommentMode>('disabled');
-  const [renderTrackedChanges, setRenderTrackedChanges] = useState(true);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+
+  // New options from 3.4.0
+  const [pageTitle, setPageTitle] = useState('Document');
+  const [cssPrefix, setCssPrefix] = useState('docx-');
+  const [fabricateClasses, setFabricateClasses] = useState(true);
+  const [additionalCss, setAdditionalCss] = useState('');
+  const [commentCssClassPrefix, setCommentCssClassPrefix] = useState('comment-');
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const getCommentRenderMode = (mode: CommentMode): CommentRenderMode => {
     switch (mode) {
@@ -21,9 +28,13 @@ export function DocumentViewer() {
     }
   };
 
-  const getConvertOptions = (comment: CommentMode, tracked: boolean) => ({
-    commentRenderMode: getCommentRenderMode(comment),
-    renderTrackedChanges: tracked,
+  const getConvertOptions = () => ({
+    commentRenderMode: getCommentRenderMode(commentMode),
+    pageTitle,
+    cssPrefix,
+    fabricateClasses,
+    additionalCss: additionalCss || undefined,
+    commentCssClassPrefix,
   });
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,21 +42,20 @@ export function DocumentViewer() {
     if (file) {
       setFileName(file.name);
       setPendingFile(file);
-      await convert(file, getConvertOptions(commentMode, renderTrackedChanges));
+      await convert(file, getConvertOptions());
+    }
+  };
+
+  const reconvert = async () => {
+    if (pendingFile) {
+      await convert(pendingFile, getConvertOptions());
     }
   };
 
   const handleCommentModeChange = async (mode: CommentMode) => {
     setCommentMode(mode);
     if (pendingFile) {
-      await convert(pendingFile, getConvertOptions(mode, renderTrackedChanges));
-    }
-  };
-
-  const handleTrackedChangesToggle = async (enabled: boolean) => {
-    setRenderTrackedChanges(enabled);
-    if (pendingFile) {
-      await convert(pendingFile, getConvertOptions(commentMode, enabled));
+      await convert(pendingFile, { ...getConvertOptions(), commentRenderMode: getCommentRenderMode(mode) });
     }
   };
 
@@ -126,16 +136,96 @@ export function DocumentViewer() {
         </div>
 
         <div className="option-group">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={renderTrackedChanges}
-              onChange={(e) => handleTrackedChangesToggle(e.target.checked)}
-              disabled={isConverting}
-            />
-            <span>Render tracked changes</span>
-          </label>
+          <button
+            type="button"
+            className="toggle-advanced-btn"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+          >
+            {showAdvanced ? '▼' : '▶'} Advanced Options
+          </button>
         </div>
+
+        {showAdvanced && (
+          <div className="advanced-options">
+            <div className="option-group">
+              <label htmlFor="page-title">Page Title</label>
+              <input
+                id="page-title"
+                type="text"
+                value={pageTitle}
+                onChange={(e) => setPageTitle(e.target.value)}
+                onBlur={reconvert}
+                placeholder="Document"
+                disabled={isConverting}
+                className="text-input"
+              />
+              <span className="option-hint">HTML document title</span>
+            </div>
+
+            <div className="option-group">
+              <label htmlFor="css-prefix">CSS Prefix</label>
+              <input
+                id="css-prefix"
+                type="text"
+                value={cssPrefix}
+                onChange={(e) => setCssPrefix(e.target.value)}
+                onBlur={reconvert}
+                placeholder="docx-"
+                disabled={isConverting}
+                className="text-input"
+              />
+              <span className="option-hint">CSS class prefix for generated styles</span>
+            </div>
+
+            <div className="option-group">
+              <label htmlFor="comment-css-prefix">Comment CSS Prefix</label>
+              <input
+                id="comment-css-prefix"
+                type="text"
+                value={commentCssClassPrefix}
+                onChange={(e) => setCommentCssClassPrefix(e.target.value)}
+                onBlur={reconvert}
+                placeholder="comment-"
+                disabled={isConverting}
+                className="text-input"
+              />
+              <span className="option-hint">CSS prefix for comment elements</span>
+            </div>
+
+            <div className="option-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={fabricateClasses}
+                  onChange={(e) => {
+                    setFabricateClasses(e.target.checked);
+                    if (pendingFile) {
+                      convert(pendingFile, { ...getConvertOptions(), fabricateClasses: e.target.checked });
+                    }
+                  }}
+                  disabled={isConverting}
+                />
+                <span>Fabricate CSS classes</span>
+              </label>
+              <span className="option-hint">Generate CSS classes for styling</span>
+            </div>
+
+            <div className="option-group">
+              <label htmlFor="additional-css">Additional CSS</label>
+              <textarea
+                id="additional-css"
+                value={additionalCss}
+                onChange={(e) => setAdditionalCss(e.target.value)}
+                onBlur={reconvert}
+                placeholder=".custom { color: red; }"
+                disabled={isConverting}
+                className="textarea-input"
+                rows={3}
+              />
+              <span className="option-hint">Custom CSS to include in output</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {isConverting && (

@@ -18,6 +18,7 @@ export function DocumentComparer() {
   const [authorName, setAuthorName] = useState('Reviewer');
   const [detailThreshold, setDetailThreshold] = useState(0.15);
   const [caseInsensitive, setCaseInsensitive] = useState(false);
+  const [renderTrackedChanges, setRenderTrackedChanges] = useState(true);
 
   const handleOriginalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -35,6 +36,7 @@ export function DocumentComparer() {
         authorName,
         detailThreshold,
         caseInsensitive,
+        renderTrackedChanges,
       });
     }
   };
@@ -50,6 +52,11 @@ export function DocumentComparer() {
   const handleDownload = () => {
     downloadResult(`comparison-${Date.now()}.docx`);
   };
+
+  // Count revisions by type
+  const insertions = revisions?.filter((r) => r.revisionType === 'Insertion' || r.revisionType === 'Inserted') || [];
+  const deletions = revisions?.filter((r) => r.revisionType === 'Deletion' || r.revisionType === 'Deleted') || [];
+  const moves = revisions?.filter((r) => r.revisionType === 'Moved' || (r as { moveGroupId?: number }).moveGroupId !== undefined) || [];
 
   return (
     <div className="document-comparer">
@@ -120,7 +127,7 @@ export function DocumentComparer() {
             <span className="option-hint">Lower = more detailed comparison</span>
           </div>
 
-          <div className="option-group">
+          <div className="option-group checkbox-group">
             <label className="checkbox-label">
               <input
                 type="checkbox"
@@ -129,6 +136,15 @@ export function DocumentComparer() {
                 disabled={isComparing}
               />
               <span>Case-insensitive comparison</span>
+            </label>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={renderTrackedChanges}
+                onChange={(e) => setRenderTrackedChanges(e.target.checked)}
+                disabled={isComparing}
+              />
+              <span>Show tracked changes in preview</span>
             </label>
           </div>
         </div>
@@ -173,11 +189,16 @@ export function DocumentComparer() {
           <h3>Revisions Found: {revisions.length}</h3>
           <div className="revision-stats">
             <span className="stat insertion">
-              Insertions: {revisions.filter((r) => r.revisionType === 'Insertion').length}
+              Insertions: {insertions.length}
             </span>
             <span className="stat deletion">
-              Deletions: {revisions.filter((r) => r.revisionType === 'Deletion').length}
+              Deletions: {deletions.length}
             </span>
+            {moves.length > 0 && (
+              <span className="stat move">
+                Moves: {moves.length}
+              </span>
+            )}
           </div>
         </div>
       )}

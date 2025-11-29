@@ -1,35 +1,86 @@
-import { useState } from 'react';
-import { useDocxodus } from 'docxodus/react';
+import { useState, useMemo, useEffect } from 'react';
+import { getRevisions as getRevisionsFromDoc, isMove, isMoveSource, findMovePair, isInsertion, isDeletion, RevisionType, initialize, isInitialized } from 'docxodus';
 import { WASM_BASE_PATH } from '../config';
 
 interface Revision {
   author: string;
   date: string;
-  revisionType: string;
+  revisionType: RevisionType | string;
   text: string;
+  moveGroupId?: number;
+  isMoveSource?: boolean;
 }
 
 export function RevisionViewer() {
-  const { isReady, isLoading, error: initError, getRevisions } = useDocxodus(WASM_BASE_PATH);
+  const [isReady, setIsReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [initError, setInitError] = useState<Error | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const [revisions, setRevisions] = useState<Revision[] | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Move detection options
+  const [detectMoves, setDetectMoves] = useState(true);
+  const [moveSimilarityThreshold, setMoveSimilarityThreshold] = useState(0.8);
+  const [moveMinimumWordCount, setMoveMinimumWordCount] = useState(3);
+  const [caseInsensitive, setCaseInsensitive] = useState(false);
+
+  // Store file reference for re-extraction
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+
+  // Initialize WASM on mount
+  useEffect(() => {
+    const init = async () => {
+      if (isInitialized()) {
+        setIsReady(true);
+        setIsLoading(false);
+        return;
+      }
+      try {
+        await initialize(WASM_BASE_PATH);
+        setIsReady(true);
+      } catch (err) {
+        setInitError(err instanceof Error ? err : new Error('Failed to initialize'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    init();
+  }, []);
+
+  const extractRevisions = async (file: File) => {
+    if (!isReady) return;
+    setIsExtracting(true);
+    setError(null);
+    try {
+      const result = await getRevisionsFromDoc(file, {
+        detectMoves,
+        moveSimilarityThreshold,
+        moveMinimumWordCount,
+        caseInsensitive,
+      });
+      setRevisions(result);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to extract revisions'));
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && isReady) {
       setFileName(file.name);
-      setIsExtracting(true);
-      setError(null);
-      try {
-        const result = await getRevisions(file);
-        setRevisions(result);
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to extract revisions'));
-      } finally {
-        setIsExtracting(false);
-      }
+      setPendingFile(file);
+      await extractRevisions(file);
+    }
+  };
+
+  const handleReExtract = async () => {
+    if (pendingFile) {
+      await extractRevisions(pendingFile);
     }
   };
 
@@ -37,6 +88,7 @@ export function RevisionViewer() {
     setFileName('');
     setRevisions(null);
     setError(null);
+    setPendingFile(null);
     const input = document.getElementById('revision-input') as HTMLInputElement;
     if (input) input.value = '';
   };
@@ -47,6 +99,41 @@ export function RevisionViewer() {
     } catch {
       return dateStr;
     }
+  };
+
+  // Compute statistics
+  const stats = useMemo(() => {
+    if (!revisions) return { insertions: 0, deletions: 0, moves: 0 };
+    return {
+      insertions: revisions.filter((r) => isInsertion(r) && !isMove(r)).length,
+      deletions: revisions.filter((r) => isDeletion(r) && !isMove(r)).length,
+      moves: revisions.filter(isMove).length,
+    };
+  }, [revisions]);
+
+  const getRevisionTypeClass = (rev: Revision): string => {
+    if (isMove(rev)) return 'move';
+    if (isInsertion(rev)) return 'insertion';
+    if (isDeletion(rev)) return 'deletion';
+    return '';
+  };
+
+  const getRevisionTypeLabel = (rev: Revision): string => {
+    if (isMove(rev)) {
+      return isMoveSource(rev) ? 'Moved From' : 'Moved To';
+    }
+    if (isInsertion(rev)) return 'Inserted';
+    if (isDeletion(rev)) return 'Deleted';
+    return String(rev.revisionType);
+  };
+
+  const getMovePairInfo = (rev: Revision): string | null => {
+    if (!isMove(rev) || !revisions) return null;
+    const pair = findMovePair(rev, revisions);
+    if (!pair) return null;
+    const direction = isMoveSource(rev) ? 'Destination' : 'Source';
+    const preview = pair.text.length > 50 ? pair.text.substring(0, 50) + '...' : pair.text;
+    return `${direction}: "${preview}"`;
   };
 
   if (isLoading) {
@@ -69,9 +156,6 @@ export function RevisionViewer() {
       </div>
     );
   }
-
-  const insertions = revisions?.filter((r) => r.revisionType?.toLowerCase().includes('insert')) || [];
-  const deletions = revisions?.filter((r) => r.revisionType?.toLowerCase().includes('delet')) || [];
 
   return (
     <div className="revision-viewer">
@@ -98,6 +182,97 @@ export function RevisionViewer() {
         Upload a document with tracked changes (e.g., from Compare Documents) to extract revision details.
       </p>
 
+      <div className="options-section">
+        <div className="option-group">
+          <button
+            type="button"
+            className="toggle-advanced-btn"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+          >
+            {showAdvanced ? '▼' : '▶'} Move Detection Options
+          </button>
+        </div>
+
+        {showAdvanced && (
+          <div className="advanced-options">
+            <div className="option-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={detectMoves}
+                  onChange={(e) => setDetectMoves(e.target.checked)}
+                  disabled={isExtracting}
+                />
+                <span>Enable move detection</span>
+              </label>
+              <span className="option-hint">Identify relocated content instead of separate delete/insert</span>
+            </div>
+
+            {detectMoves && (
+              <>
+                <div className="option-group">
+                  <label htmlFor="similarity-threshold">
+                    Similarity Threshold: {Math.round(moveSimilarityThreshold * 100)}%
+                  </label>
+                  <input
+                    id="similarity-threshold"
+                    type="range"
+                    min="0.5"
+                    max="1"
+                    step="0.05"
+                    value={moveSimilarityThreshold}
+                    onChange={(e) => setMoveSimilarityThreshold(parseFloat(e.target.value))}
+                    disabled={isExtracting}
+                  />
+                  <span className="option-hint">Higher = require more exact matches (Jaccard similarity)</span>
+                </div>
+
+                <div className="option-group">
+                  <label htmlFor="min-word-count">
+                    Minimum Word Count: {moveMinimumWordCount}
+                  </label>
+                  <input
+                    id="min-word-count"
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={moveMinimumWordCount}
+                    onChange={(e) => setMoveMinimumWordCount(parseInt(e.target.value))}
+                    disabled={isExtracting}
+                  />
+                  <span className="option-hint">Short phrases below this count are excluded</span>
+                </div>
+
+                <div className="option-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={caseInsensitive}
+                      onChange={(e) => setCaseInsensitive(e.target.checked)}
+                      disabled={isExtracting}
+                    />
+                    <span>Case-insensitive matching</span>
+                  </label>
+                  <span className="option-hint">Ignore case differences when detecting moves</span>
+                </div>
+              </>
+            )}
+
+            {pendingFile && (
+              <button
+                onClick={handleReExtract}
+                disabled={isExtracting}
+                className="compare-btn"
+                style={{ marginTop: '0.5rem' }}
+              >
+                Re-extract with new settings
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       {isExtracting && (
         <div className="loading">
           <div className="spinner"></div>
@@ -122,34 +297,44 @@ export function RevisionViewer() {
           <div className="revisions-summary">
             <h3>Revisions Found: {revisions.length}</h3>
             <div className="revision-stats">
-              <span className="stat insertion">Insertions: {insertions.length}</span>
-              <span className="stat deletion">Deletions: {deletions.length}</span>
+              <span className="stat insertion">Insertions: {stats.insertions}</span>
+              <span className="stat deletion">Deletions: {stats.deletions}</span>
+              {stats.moves > 0 && (
+                <span className="stat move">Moves: {stats.moves}</span>
+              )}
             </div>
           </div>
 
           <div className="revisions-list">
             {revisions.map((rev, index) => {
-              const typeClass = rev.revisionType?.toLowerCase().includes('insert')
-                ? 'insertion'
-                : rev.revisionType?.toLowerCase().includes('delet')
-                ? 'deletion'
-                : '';
+              const typeClass = getRevisionTypeClass(rev);
+              const movePairInfo = getMovePairInfo(rev);
               return (
-              <div
-                key={index}
-                className={`revision-item ${typeClass}`}
-              >
-                <div className="revision-header">
-                  <span className={`revision-type ${typeClass}`}>
-                    {rev.revisionType}
-                  </span>
-                  <span className="revision-author">{rev.author}</span>
-                  <span className="revision-date">{formatDate(rev.date)}</span>
+                <div
+                  key={index}
+                  className={`revision-item ${typeClass}`}
+                >
+                  <div className="revision-header">
+                    <span className={`revision-type ${typeClass}`}>
+                      {getRevisionTypeLabel(rev)}
+                    </span>
+                    {isMove(rev) && rev.moveGroupId !== undefined && (
+                      <span className="move-group-badge">
+                        Group #{rev.moveGroupId}
+                      </span>
+                    )}
+                    <span className="revision-author">{rev.author}</span>
+                    <span className="revision-date">{formatDate(rev.date)}</span>
+                  </div>
+                  <div className="revision-text">
+                    {rev.text || <em>(empty)</em>}
+                  </div>
+                  {movePairInfo && (
+                    <div className="move-pair-info">
+                      {movePairInfo}
+                    </div>
+                  )}
                 </div>
-                <div className="revision-text">
-                  {rev.text || <em>(empty)</em>}
-                </div>
-              </div>
               );
             })}
           </div>
