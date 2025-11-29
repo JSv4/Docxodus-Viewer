@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useConversion } from 'docxodus/react';
-import { CommentRenderMode } from 'docxodus';
+import { useConversion, PaginatedDocument } from 'docxodus/react';
+import { CommentRenderMode, PaginationMode } from 'docxodus';
 import { WASM_BASE_PATH } from '../config';
 
 type CommentMode = 'disabled' | 'endnote' | 'inline' | 'margin';
@@ -11,7 +11,12 @@ export function DocumentViewer() {
   const [commentMode, setCommentMode] = useState<CommentMode>('disabled');
   const [pendingFile, setPendingFile] = useState<File | null>(null);
 
-  // New options from 3.4.0
+  // Pagination options
+  const [enablePagination, setEnablePagination] = useState(false);
+  const [paginationScale, setPaginationScale] = useState(0.8);
+  const [showPageNumbers, setShowPageNumbers] = useState(true);
+
+  // Advanced options
   const [pageTitle, setPageTitle] = useState('Document');
   const [cssPrefix, setCssPrefix] = useState('docx-');
   const [fabricateClasses, setFabricateClasses] = useState(true);
@@ -35,6 +40,8 @@ export function DocumentViewer() {
     fabricateClasses,
     additionalCss: additionalCss || undefined,
     commentCssClassPrefix,
+    paginationMode: enablePagination ? PaginationMode.Paginated : PaginationMode.None,
+    paginationScale: enablePagination ? paginationScale : undefined,
   });
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,6 +63,17 @@ export function DocumentViewer() {
     setCommentMode(mode);
     if (pendingFile) {
       await convert(pendingFile, { ...getConvertOptions(), commentRenderMode: getCommentRenderMode(mode) });
+    }
+  };
+
+  const handlePaginationToggle = async (enabled: boolean) => {
+    setEnablePagination(enabled);
+    if (pendingFile) {
+      await convert(pendingFile, {
+        ...getConvertOptions(),
+        paginationMode: enabled ? PaginationMode.Paginated : PaginationMode.None,
+        paginationScale: enabled ? paginationScale : undefined,
+      });
     }
   };
 
@@ -134,6 +152,51 @@ export function DocumentViewer() {
             </label>
           </div>
         </div>
+
+        <div className="option-group">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={enablePagination}
+              onChange={(e) => handlePaginationToggle(e.target.checked)}
+              disabled={isConverting}
+            />
+            <span>Enable pagination (PDF-style pages)</span>
+          </label>
+        </div>
+
+        {enablePagination && (
+          <div className="pagination-options">
+            <div className="option-group">
+              <label htmlFor="pagination-scale">
+                Page Scale: {Math.round(paginationScale * 100)}%
+              </label>
+              <input
+                id="pagination-scale"
+                type="range"
+                min="0.5"
+                max="1.5"
+                step="0.1"
+                value={paginationScale}
+                onChange={(e) => setPaginationScale(parseFloat(e.target.value))}
+                onMouseUp={reconvert}
+                onTouchEnd={reconvert}
+                disabled={isConverting}
+              />
+            </div>
+            <div className="option-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={showPageNumbers}
+                  onChange={(e) => setShowPageNumbers(e.target.checked)}
+                  disabled={isConverting}
+                />
+                <span>Show page numbers</span>
+              </label>
+            </div>
+          </div>
+        )}
 
         <div className="option-group">
           <button
@@ -243,10 +306,21 @@ export function DocumentViewer() {
 
       {html && (
         <div className="document-content">
-          <div
-            className="html-preview"
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
+          {enablePagination ? (
+            <PaginatedDocument
+              html={html}
+              scale={paginationScale}
+              showPageNumbers={showPageNumbers}
+              pageGap={20}
+              backgroundColor="#525659"
+              className="paginated-preview"
+            />
+          ) : (
+            <div
+              className="html-preview"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
+          )}
         </div>
       )}
     </div>

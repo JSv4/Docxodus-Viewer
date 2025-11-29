@@ -617,6 +617,34 @@ input[type="file"] {
   color: #888;
 }
 
+/* Pagination options */
+.pagination-options {
+  display: flex;
+  gap: 2rem;
+  padding: 0.75rem 1rem;
+  background: #e8f4fc;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.pagination-options .option-group {
+  flex: 0 0 auto;
+}
+
+.pagination-options input[type="range"] {
+  width: 150px;
+}
+
+/* Paginated document container */
+.paginated-preview {
+  min-height: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 8px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .compare-inputs {
