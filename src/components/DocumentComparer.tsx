@@ -200,14 +200,14 @@ export function DocumentComparer() {
       </div>
 
       {isComparing && (
-        <div className="loading">
+        <div className="loading loading-processing">
           <div className="spinner"></div>
           <p>Comparing documents...</p>
-          <span className="loading-hint">Large documents may take a while</span>
+          <span className="loading-hint">This may take 10+ seconds for large documents</span>
         </div>
       )}
 
-      {error && (
+      {error && !isComparing && (
         <div className="error">
           <p>Error: {error.message}</p>
         </div>

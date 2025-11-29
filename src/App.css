@@ -223,6 +223,28 @@ input[type="file"] {
   margin: 1rem 0;
 }
 
+.loading-processing {
+  padding: 3rem;
+  background: linear-gradient(135deg, #e8f4fc 0%, #f0f8ff 100%);
+  border: 2px solid #3498db;
+  border-radius: 12px;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+}
+
+.loading-processing p {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.loading-processing .spinner {
+  width: 50px;
+  height: 50px;
+  border-width: 5px;
+}
+
 .loading-hint {
   display: block;
   font-size: 0.85rem;

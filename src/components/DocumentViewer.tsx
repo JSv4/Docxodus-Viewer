@@ -56,6 +56,7 @@ export function DocumentViewer() {
     if (!isReady) return;
     setIsConverting(true);
     setError(null);
+    setHtml(null); // Clear previous result to show loading indicator
     try {
       const result = await convertToHtml(file, options);
       setHtml(result);
@@ -338,14 +339,14 @@ export function DocumentViewer() {
       </div>
 
       {isConverting && (
-        <div className="loading">
+        <div className="loading loading-processing">
           <div className="spinner"></div>
-          <p>Converting document...</p>
-          <span className="loading-hint">Large documents may take a while</span>
+          <p>Processing document...</p>
+          <span className="loading-hint">This may take 10+ seconds for large documents</span>
         </div>
       )}
 
-      {error && (
+      {error && !isConverting && (
         <div className="error">
           <p>Error: {error.message}</p>
         </div>

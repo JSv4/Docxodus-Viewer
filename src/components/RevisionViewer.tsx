@@ -59,6 +59,7 @@ export function RevisionViewer() {
     if (!isReady) return;
     setIsExtracting(true);
     setError(null);
+    setRevisions(null); // Clear previous results to show loading
     try {
       const result = await getRevisionsFromDoc(file, {
         detectMoves,
@@ -290,19 +291,20 @@ export function RevisionViewer() {
       </div>
 
       {isExtracting && (
-        <div className="loading">
+        <div className="loading loading-processing">
           <div className="spinner"></div>
           <p>Extracting revisions...</p>
+          <span className="loading-hint">This may take 10+ seconds for large documents</span>
         </div>
       )}
 
-      {error && (
+      {error && !isExtracting && (
         <div className="error">
           <p>Error: {error.message}</p>
         </div>
       )}
 
-      {revisions && revisions.length === 0 && (
+      {revisions && revisions.length === 0 && !isExtracting && (
         <div className="no-revisions">
           <p>No tracked changes found in this document.</p>
         </div>
