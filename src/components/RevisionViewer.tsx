@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useDocxodus } from 'docxodus/react';
+import { WASM_BASE_PATH } from '../config';
 
 interface Revision {
   author: string;
@@ -9,7 +10,7 @@ interface Revision {
 }
 
 export function RevisionViewer() {
-  const { isReady, isLoading, error: initError, getRevisions } = useDocxodus();
+  const { isReady, isLoading, error: initError, getRevisions } = useDocxodus(WASM_BASE_PATH);
   const [fileName, setFileName] = useState<string>('');
   const [revisions, setRevisions] = useState<Revision[] | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);

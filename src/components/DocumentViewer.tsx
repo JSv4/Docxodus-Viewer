@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useConversion } from 'docxodus/react';
 import { CommentRenderMode } from 'docxodus';
+import { WASM_BASE_PATH } from '../config';
 
 type CommentMode = 'disabled' | 'endnote' | 'inline' | 'margin';
 
 export function DocumentViewer() {
-  const { html, isConverting, error, convert, clear } = useConversion();
+  const { html, isConverting, error, convert, clear } = useConversion(WASM_BASE_PATH);
   const [fileName, setFileName] = useState<string>('');
   const [commentMode, setCommentMode] = useState<CommentMode>('disabled');
   const [pendingFile, setPendingFile] = useState<File | null>(null);

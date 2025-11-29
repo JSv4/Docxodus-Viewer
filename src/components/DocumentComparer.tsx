@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useComparison } from 'docxodus/react';
+import { WASM_BASE_PATH } from '../config';
 
 export function DocumentComparer() {
   const {
@@ -10,7 +11,7 @@ export function DocumentComparer() {
     compareToHtml,
     downloadResult,
     clear,
-  } = useComparison();
+  } = useComparison(WASM_BASE_PATH);
 
   const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [modifiedFile, setModifiedFile] = useState<File | null>(null);
