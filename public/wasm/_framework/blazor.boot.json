@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "DocxodusWasm.dll",
   "resources": {
-    "hash": "sha256-QtbVOeX80AaqvJZ1UEJbV1NvJbYTQrXf0uW0QS2gris=",
+    "hash": "sha256-XGA9BotleGWillA0Y08Ju3xF2ga4eDBSj6oOUY/vXoo=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-YLwjs9CPwrZG7YKULjmqr5bYsmhxwcWJOhQNM4bG6Gc="
     },
@@ -9,7 +9,7 @@
       "dotnet.runtime.js": "sha256-6bV/iAemowb59rmItegP8VsxwWpWUNyMb0Q76Fvvsjo="
     },
     "wasmNative": {
-      "dotnet.native.wasm": "sha256-SekCpXNejqq/kKOFiSel6lZJarcUHqcQd8tkTtaYxwc="
+      "dotnet.native.wasm": "sha256-oysPZYjEKdfpLUD/v48taAyPz6bL0Rc61lGSeQYGjPM="
     },
     "wasmSymbols": {
       "dotnet.native.js.symbols": "sha256-SPuqdYGx50WJuwIFlVGiSuYfladQxWcf88Yd1G1V7W0="
@@ -17,8 +17,8 @@
     "assembly": {
       "DocumentFormat.OpenXml.wasm": "sha256-edAN2rIA7QQ8K5qp1o5QXplt8M80fEiVmuMgT/MBmLM=",
       "DocumentFormat.OpenXml.Framework.wasm": "sha256-CFdrD1dSpnkcOk0gxZcKb2T5p+q2ck9ivs+TOML6Jmw=",
-      "Docxodus.wasm": "sha256-vKHEU4KJBV0Cw5IunXgo1A6ohRfPap9Ry7wl0UP6PoQ=",
-      "DocxodusWasm.wasm": "sha256-D6xkDUa2XfJDEBd01pgstAJ3rYh7CiNJvgkoCf36GXI=",
+      "Docxodus.wasm": "sha256-bI38w8+Mv8KnZaukzEoCzeXgKnwhECjGWBoYl2dXN+k=",
+      "DocxodusWasm.wasm": "sha256-lSJFHXwX95gzfc/JV04RIQubCVoOjMD2KCXjcwMAuCY=",
       "SkiaSharp.wasm": "sha256-U6RbqUVBn8Vx8qpghJC5+r/DC1NSBY+EIRDxP8o6dsk=",
       "System.Collections.Concurrent.wasm": "sha256-xXJbJWNeQ2DSYvAGUoUHjF9y4Iajv2ed0eACOxWD19U=",
       "System.Collections.wasm": "sha256-J1FML3h2WBTlmekS0TVLGCvZGbIRG+AZnGmlZn3Y5+Q=",
@@ -37,7 +37,7 @@
       "System.Net.Http.wasm": "sha256-gfinV/63sNC0fUQkDJlS9YhPxGAlhaMJ60PisQ6cGMw=",
       "System.Net.Primitives.wasm": "sha256-gKuhOsrrlKcVl7zeLW7q8PQ+MGt2EFqxRTMCdp4IjP8=",
       "System.ObjectModel.wasm": "sha256-x7qtHOTvmJ6Wa03MtqCxc3J0Os4RKQpGO469LHVEgmw=",
-      "System.Private.CoreLib.wasm": "sha256-BRZJMWwBFflpwqkX2o5+h50dyYTBrqth/Y++UQYY9kw=",
+      "System.Private.CoreLib.wasm": "sha256-UsMfSJt6aM+qdFjWDydlGmYm21iROSck3ALoUhg6zYo=",
       "System.Private.Uri.wasm": "sha256-BnaHYeR1cbbaYnfkExIe3083WDqV4eVrRM4cFrjoO6s=",
       "System.Private.Xml.wasm": "sha256-xn9o+VrKwag3i1zkMUfB04kvi5pFm/FrY1BBZOwULO0=",
       "System.Private.Xml.Linq.wasm": "sha256-K4auvJEzV4JmdQJ4zitUfOnd5EmsssQ6zwtaDsNyAYk=",
