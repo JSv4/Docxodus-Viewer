@@ -13,20 +13,31 @@ A client-side DOCX document viewer and comparison tool built with React. All doc
   - **Endnotes** - Comments appear at the end with numbered references
   - **Inline** - Comments shown as tooltips on hover
   - **Margin** - Comments displayed in a side column
+- **Advanced options** (collapsible panel):
+  - Page title, CSS prefix, comment CSS prefix
+  - Fabricate CSS classes toggle
+  - Custom additional CSS
 
 ### Document Comparison
 - Compare two DOCX files and generate a redlined document with tracked changes
-- Visual diff with insertions (green) and deletions (red) highlighted
+- Visual diff with insertions (green), deletions (red), and moves (purple) highlighted
 - **Configurable comparison options:**
   - **Detail Level** - Control comparison granularity (lower = more detailed)
   - **Case-insensitive** - Ignore case differences when comparing
   - **Author name** - Set the author for tracked changes
+  - **Show tracked changes** - Toggle visibility of changes in preview
 - Download the comparison result as a DOCX file with tracked changes
 
 ### Revision Extraction
 - Extract structured revision data from documents with tracked changes
 - View revision details: type, author, date, and changed text
-- Summary statistics for insertions and deletions
+- Summary statistics for insertions, deletions, and moves
+- **Move detection options** (collapsible panel):
+  - Enable/disable move detection
+  - Similarity threshold (50-100%)
+  - Minimum word count filter
+  - Case-insensitive matching
+- Move pair linking with group badges
 
 ## Technology
 
@@ -68,6 +79,23 @@ npm run build
 ```
 
 The built files will be in the `dist/` directory.
+
+### Updating Docxodus
+
+When upgrading the docxodus package, you must also update the WASM files in the `public/` directory:
+
+```bash
+# 1. Update the package
+npm install docxodus@latest
+
+# 2. Copy WASM files to public directory
+rm -rf public/wasm && cp -r node_modules/docxodus/dist/wasm public/wasm
+
+# 3. Rebuild
+npm run build
+```
+
+The WASM files in `public/wasm/` are served statically and must match the installed package version.
 
 ## Deployment
 
