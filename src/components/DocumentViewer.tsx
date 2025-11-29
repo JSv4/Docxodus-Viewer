@@ -70,7 +70,12 @@ export function DocumentViewer() {
     setEnablePagination(enabled);
     if (pendingFile) {
       await convert(pendingFile, {
-        ...getConvertOptions(),
+        commentRenderMode: getCommentRenderMode(commentMode),
+        pageTitle,
+        cssPrefix,
+        fabricateClasses,
+        additionalCss: additionalCss || undefined,
+        commentCssClassPrefix,
         paginationMode: enabled ? PaginationMode.Paginated : PaginationMode.None,
         paginationScale: enabled ? paginationScale : undefined,
       });
