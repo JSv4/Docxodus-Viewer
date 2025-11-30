@@ -229,8 +229,6 @@ export function DocumentViewer() {
                 step="0.1"
                 value={paginationScale}
                 onChange={(e) => setPaginationScale(parseFloat(e.target.value))}
-                onMouseUp={reconvert}
-                onTouchEnd={reconvert}
                 disabled={isProcessing}
               />
             </div>
