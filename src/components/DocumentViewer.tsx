@@ -26,6 +26,13 @@ export function DocumentViewer() {
   // Annotation options
   const [annotationMode, setAnnotationMode] = useState<AnnotationMode>('disabled');
 
+  // Footnotes, Headers, and Tracked Changes options
+  const [renderFootnotesAndEndnotes, setRenderFootnotesAndEndnotes] = useState(false);
+  const [renderHeadersAndFooters, setRenderHeadersAndFooters] = useState(false);
+  const [renderTrackedChanges, setRenderTrackedChanges] = useState(false);
+  const [showDeletedContent, setShowDeletedContent] = useState(true);
+  const [renderMoveOperations, setRenderMoveOperations] = useState(true);
+
   // Advanced options
   const [pageTitle, setPageTitle] = useState('Document');
   const [cssPrefix, setCssPrefix] = useState('docx-');
@@ -61,6 +68,11 @@ export function DocumentViewer() {
     fabricateClasses?: boolean;
     renderAnnotations?: boolean;
     annotationLabelMode?: AnnotationLabelMode;
+    renderFootnotesAndEndnotes?: boolean;
+    renderHeadersAndFooters?: boolean;
+    renderTrackedChanges?: boolean;
+    showDeletedContent?: boolean;
+    renderMoveOperations?: boolean;
   }) => ({
     commentRenderMode: overrides?.commentRenderMode ?? getCommentRenderMode(commentMode),
     pageTitle,
@@ -73,7 +85,12 @@ export function DocumentViewer() {
     renderAnnotations: overrides?.renderAnnotations ?? (annotationMode !== 'disabled'),
     annotationLabelMode: overrides?.annotationLabelMode ?? getAnnotationLabelMode(annotationMode),
     annotationCssClassPrefix,
-  }), [commentMode, pageTitle, cssPrefix, fabricateClasses, additionalCss, commentCssClassPrefix, enablePagination, paginationScale, annotationMode, annotationCssClassPrefix]);
+    renderFootnotesAndEndnotes: overrides?.renderFootnotesAndEndnotes ?? renderFootnotesAndEndnotes,
+    renderHeadersAndFooters: overrides?.renderHeadersAndFooters ?? renderHeadersAndFooters,
+    renderTrackedChanges: overrides?.renderTrackedChanges ?? renderTrackedChanges,
+    showDeletedContent: overrides?.showDeletedContent ?? showDeletedContent,
+    renderMoveOperations: overrides?.renderMoveOperations ?? renderMoveOperations,
+  }), [commentMode, pageTitle, cssPrefix, fabricateClasses, additionalCss, commentCssClassPrefix, enablePagination, paginationScale, annotationMode, annotationCssClassPrefix, renderFootnotesAndEndnotes, renderHeadersAndFooters, renderTrackedChanges, showDeletedContent, renderMoveOperations]);
 
   const convert = useCallback(async (file: File, options: ReturnType<typeof getConvertOptions>) => {
     if (!isReady) return;
@@ -326,6 +343,94 @@ export function DocumentViewer() {
                   disabled={isProcessing}
                 />
                 <span>Show page numbers</span>
+              </label>
+            </div>
+          </div>
+        )}
+
+        <div className="option-group">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={renderFootnotesAndEndnotes}
+              onChange={(e) => {
+                setRenderFootnotesAndEndnotes(e.target.checked);
+                if (pendingFile) {
+                  convert(pendingFile, getConvertOptions({ renderFootnotesAndEndnotes: e.target.checked }));
+                }
+              }}
+              disabled={isProcessing}
+            />
+            <span>Show footnotes and endnotes</span>
+          </label>
+        </div>
+
+        <div className="option-group">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={renderHeadersAndFooters}
+              onChange={(e) => {
+                setRenderHeadersAndFooters(e.target.checked);
+                if (pendingFile) {
+                  convert(pendingFile, getConvertOptions({ renderHeadersAndFooters: e.target.checked }));
+                }
+              }}
+              disabled={isProcessing}
+            />
+            <span>Show headers and footers</span>
+          </label>
+        </div>
+
+        <div className="option-group">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={renderTrackedChanges}
+              onChange={(e) => {
+                setRenderTrackedChanges(e.target.checked);
+                if (pendingFile) {
+                  convert(pendingFile, getConvertOptions({ renderTrackedChanges: e.target.checked }));
+                }
+              }}
+              disabled={isProcessing}
+            />
+            <span>Show tracked changes (insertions/deletions)</span>
+          </label>
+        </div>
+
+        {renderTrackedChanges && (
+          <div className="tracked-changes-options">
+            <div className="option-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={showDeletedContent}
+                  onChange={(e) => {
+                    setShowDeletedContent(e.target.checked);
+                    if (pendingFile) {
+                      convert(pendingFile, getConvertOptions({ showDeletedContent: e.target.checked }));
+                    }
+                  }}
+                  disabled={isProcessing}
+                />
+                <span>Show deleted content with strikethrough</span>
+              </label>
+            </div>
+            <div className="option-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={renderMoveOperations}
+                  onChange={(e) => {
+                    setRenderMoveOperations(e.target.checked);
+                    if (pendingFile) {
+                      convert(pendingFile, getConvertOptions({ renderMoveOperations: e.target.checked }));
+                    }
+                  }}
+                  disabled={isProcessing}
+                />
+                <span>Distinguish move operations</span>
               </label>
             </div>
           </div>

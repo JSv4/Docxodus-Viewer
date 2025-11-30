@@ -704,6 +704,22 @@ input[type="file"] {
   width: 150px;
 }
 
+/* Tracked changes options */
+.tracked-changes-options {
+  display: flex;
+  gap: 2rem;
+  padding: 0.75rem 1rem;
+  background: #fff3e0;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tracked-changes-options .option-group {
+  flex: 0 0 auto;
+}
+
 /* Pagination info */
 .pagination-info {
   padding: 0.5rem 1rem;
