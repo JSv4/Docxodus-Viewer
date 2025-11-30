@@ -695,6 +695,11 @@ input[type="file"] {
   flex: 0 0 auto;
 }
 
+.pagination-options .option-group label[for="pagination-scale"] {
+  display: inline-block;
+  min-width: 130px;
+}
+
 .pagination-options input[type="range"] {
   width: 150px;
 }
