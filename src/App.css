@@ -329,10 +329,22 @@ input[type="file"] {
 .html-preview {
   padding: 2rem;
   background: white;
+  color: #333;
   min-height: 400px;
   max-height: 70vh;
   overflow-y: auto;
   text-align: left;
+  color-scheme: light;
+}
+
+/* Ensure text color is inherited in rendered document */
+.html-preview * {
+  color: inherit;
+}
+
+/* Allow specific elements to have their own colors */
+.html-preview a {
+  color: #3498db;
 }
 
 /* Tracked changes styling */
