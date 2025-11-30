@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { DocumentViewer } from './components/DocumentViewer';
 import { DocumentComparer } from './components/DocumentComparer';
 import { RevisionViewer } from './components/RevisionViewer';
+import { AnnotationViewer } from './components/AnnotationViewer';
 import './App.css';
 
-type Tab = 'viewer' | 'compare' | 'revisions';
+type Tab = 'viewer' | 'compare' | 'revisions' | 'annotations';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('viewer');
@@ -35,12 +36,19 @@ function App() {
         >
           Extract Revisions
         </button>
+        <button
+          className={`tab-btn ${activeTab === 'annotations' ? 'active' : ''}`}
+          onClick={() => setActiveTab('annotations')}
+        >
+          Annotations
+        </button>
       </nav>
 
       <main className="app-main">
         {activeTab === 'viewer' && <DocumentViewer />}
         {activeTab === 'compare' && <DocumentComparer />}
         {activeTab === 'revisions' && <RevisionViewer />}
+        {activeTab === 'annotations' && <AnnotationViewer />}
       </main>
 
       <footer className="app-footer">

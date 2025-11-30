@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
 import { useDocxodus, PaginatedDocument } from 'docxodus/react';
-import { CommentRenderMode, PaginationMode } from 'docxodus';
+import { CommentRenderMode, PaginationMode, AnnotationLabelMode } from 'docxodus';
 import type { PaginationResult } from 'docxodus/react';
 import { WASM_BASE_PATH } from '../config';
 
 type CommentMode = 'disabled' | 'endnote' | 'inline' | 'margin';
+type AnnotationMode = 'disabled' | 'above' | 'inline' | 'tooltip' | 'none';
 
 export function DocumentViewer() {
   const { isReady, isLoading, error: initError, convertToHtml } = useDocxodus(WASM_BASE_PATH);
@@ -22,12 +23,16 @@ export function DocumentViewer() {
   const [paginationScale, setPaginationScale] = useState(0.8);
   const [showPageNumbers, setShowPageNumbers] = useState(true);
 
+  // Annotation options
+  const [annotationMode, setAnnotationMode] = useState<AnnotationMode>('disabled');
+
   // Advanced options
   const [pageTitle, setPageTitle] = useState('Document');
   const [cssPrefix, setCssPrefix] = useState('docx-');
   const [fabricateClasses, setFabricateClasses] = useState(true);
   const [additionalCss, setAdditionalCss] = useState('');
   const [commentCssClassPrefix, setCommentCssClassPrefix] = useState('comment-');
+  const [annotationCssClassPrefix, setAnnotationCssClassPrefix] = useState('annot-');
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const getCommentRenderMode = (mode: CommentMode): CommentRenderMode => {
@@ -39,11 +44,23 @@ export function DocumentViewer() {
     }
   };
 
+  const getAnnotationLabelMode = (mode: AnnotationMode): AnnotationLabelMode | undefined => {
+    switch (mode) {
+      case 'above': return AnnotationLabelMode.Above;
+      case 'inline': return AnnotationLabelMode.Inline;
+      case 'tooltip': return AnnotationLabelMode.Tooltip;
+      case 'none': return AnnotationLabelMode.None;
+      default: return undefined;
+    }
+  };
+
   const getConvertOptions = useCallback((overrides?: {
     commentRenderMode?: CommentRenderMode;
     paginationMode?: PaginationMode;
     paginationScale?: number;
     fabricateClasses?: boolean;
+    renderAnnotations?: boolean;
+    annotationLabelMode?: AnnotationLabelMode;
   }) => ({
     commentRenderMode: overrides?.commentRenderMode ?? getCommentRenderMode(commentMode),
     pageTitle,
@@ -53,7 +70,10 @@ export function DocumentViewer() {
     commentCssClassPrefix,
     paginationMode: overrides?.paginationMode ?? (enablePagination ? PaginationMode.Paginated : PaginationMode.None),
     paginationScale: overrides?.paginationScale ?? (enablePagination ? paginationScale : undefined),
-  }), [commentMode, pageTitle, cssPrefix, fabricateClasses, additionalCss, commentCssClassPrefix, enablePagination, paginationScale]);
+    renderAnnotations: overrides?.renderAnnotations ?? (annotationMode !== 'disabled'),
+    annotationLabelMode: overrides?.annotationLabelMode ?? getAnnotationLabelMode(annotationMode),
+    annotationCssClassPrefix,
+  }), [commentMode, pageTitle, cssPrefix, fabricateClasses, additionalCss, commentCssClassPrefix, enablePagination, paginationScale, annotationMode, annotationCssClassPrefix]);
 
   const convert = useCallback(async (file: File, options: ReturnType<typeof getConvertOptions>) => {
     if (!isReady) return;
@@ -98,6 +118,16 @@ export function DocumentViewer() {
       await convert(pendingFile, getConvertOptions({
         paginationMode: enabled ? PaginationMode.Paginated : PaginationMode.None,
         paginationScale: enabled ? paginationScale : undefined,
+      }));
+    }
+  };
+
+  const handleAnnotationModeChange = async (mode: AnnotationMode) => {
+    setAnnotationMode(mode);
+    if (pendingFile) {
+      await convert(pendingFile, getConvertOptions({
+        renderAnnotations: mode !== 'disabled',
+        annotationLabelMode: getAnnotationLabelMode(mode),
       }));
     }
   };
@@ -204,6 +234,62 @@ export function DocumentViewer() {
         </div>
 
         <div className="option-group">
+          <label>Annotation Rendering</label>
+          <div className="radio-group">
+            <label className="radio-label">
+              <input
+                type="radio"
+                name="annotationMode"
+                checked={annotationMode === 'disabled'}
+                onChange={() => handleAnnotationModeChange('disabled')}
+                disabled={isProcessing}
+              />
+              <span>Disabled</span>
+            </label>
+            <label className="radio-label">
+              <input
+                type="radio"
+                name="annotationMode"
+                checked={annotationMode === 'above'}
+                onChange={() => handleAnnotationModeChange('above')}
+                disabled={isProcessing}
+              />
+              <span>Above</span>
+            </label>
+            <label className="radio-label">
+              <input
+                type="radio"
+                name="annotationMode"
+                checked={annotationMode === 'inline'}
+                onChange={() => handleAnnotationModeChange('inline')}
+                disabled={isProcessing}
+              />
+              <span>Inline</span>
+            </label>
+            <label className="radio-label">
+              <input
+                type="radio"
+                name="annotationMode"
+                checked={annotationMode === 'tooltip'}
+                onChange={() => handleAnnotationModeChange('tooltip')}
+                disabled={isProcessing}
+              />
+              <span>Tooltip</span>
+            </label>
+            <label className="radio-label">
+              <input
+                type="radio"
+                name="annotationMode"
+                checked={annotationMode === 'none'}
+                onChange={() => handleAnnotationModeChange('none')}
+                disabled={isProcessing}
+              />
+              <span>Highlight Only</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="option-group">
           <label className="checkbox-label">
             <input
               type="checkbox"
@@ -300,6 +386,21 @@ export function DocumentViewer() {
                 className="text-input"
               />
               <span className="option-hint">CSS prefix for comment elements</span>
+            </div>
+
+            <div className="option-group">
+              <label htmlFor="annotation-css-prefix">Annotation CSS Prefix</label>
+              <input
+                id="annotation-css-prefix"
+                type="text"
+                value={annotationCssClassPrefix}
+                onChange={(e) => setAnnotationCssClassPrefix(e.target.value)}
+                onBlur={reconvert}
+                placeholder="annot-"
+                disabled={isProcessing}
+                className="text-input"
+              />
+              <span className="option-hint">CSS prefix for annotation elements</span>
             </div>
 
             <div className="option-group">
