@@ -99,12 +99,24 @@ export function DocumentViewer() {
     }
   }, [isReady, convertToHtml, getConvertOptions]);
 
+  // Auto-convert when WASM becomes ready and we have a pending file
+  useEffect(() => {
+    if (isReady && pendingFile && !html && !isConverting) {
+      convert(pendingFile);
+    }
+  }, [isReady, pendingFile, html, isConverting, convert]);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setFileName(file.name);
       setPendingFile(file);
-      await convert(file);
+      setHtml(null);
+      setError(null);
+      if (isReady) {
+        await convert(file);
+      }
+      // If not ready, the useEffect above will trigger conversion when ready
     }
   };
 
@@ -437,30 +449,29 @@ export function DocumentViewer() {
 
       {/* Content Area */}
       <div className="viewer-content">
-        {isLoading && (
-          <div className="viewer-message">
-            <div className="spinner"></div>
-            <p>Loading document engine...</p>
-          </div>
-        )}
-
         {initError && (
           <div className="viewer-message error">
             <p>Failed to initialize: {initError.message}</p>
           </div>
         )}
 
-        {!isLoading && !initError && !html && !isConverting && (
-          <div className="viewer-message placeholder">
-            <div className="placeholder-icon">📄</div>
-            <p>Open a DOCX file to view</p>
+        {!initError && (isLoading || isConverting) && (
+          <div className="viewer-message">
+            <div className="spinner"></div>
+            <p>
+              {isLoading && pendingFile
+                ? 'Loading engine & preparing document...'
+                : isLoading
+                ? 'Loading document engine...'
+                : 'Processing document...'}
+            </p>
           </div>
         )}
 
-        {isConverting && (
-          <div className="viewer-message">
-            <div className="spinner"></div>
-            <p>Processing document...</p>
+        {!isLoading && !initError && !html && !isConverting && !pendingFile && (
+          <div className="viewer-message placeholder">
+            <div className="placeholder-icon">📄</div>
+            <p>Open a DOCX file to view</p>
           </div>
         )}
 
