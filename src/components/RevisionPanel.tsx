@@ -39,9 +39,81 @@ function formatDate(isoDate: string): string {
   }
 }
 
-function truncateText(text: string, maxLength: number = 100): string {
+function truncateText(text: string, maxLength: number = 150): string {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + '...';
+}
+
+// Filter out raw XML values and clean up property names
+function isValidPropertyValue(value: string): boolean {
+  if (!value || typeof value !== 'string') return false;
+  // Filter out raw XML data
+  if (value.includes('<') || value.includes('xmlns') || value.includes('Unid=')) return false;
+  // Filter out overly long values (likely XML)
+  if (value.length > 100) return false;
+  return true;
+}
+
+// Make property names more readable
+function formatPropertyName(name: string): string {
+  // Convert camelCase to Title Case with spaces
+  return name
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
+}
+
+// Format property value for display
+function formatPropertyValue(value: string): string {
+  if (value === 'true') return 'Yes';
+  if (value === 'false') return 'No';
+  if (value === 'single') return 'Single';
+  if (value === 'double') return 'Double';
+  return value;
+}
+
+interface FormatChangeItem {
+  property: string;
+  oldValue?: string;
+  newValue?: string;
+}
+
+// Get paired format changes (old → new for same property)
+function getFormatChanges(revision: Revision): FormatChangeItem[] {
+  if (!revision.formatChange) return [];
+
+  const { oldProperties, newProperties } = revision.formatChange;
+  const changes: FormatChangeItem[] = [];
+  const processedKeys = new Set<string>();
+
+  // Process old properties
+  if (oldProperties) {
+    for (const [key, value] of Object.entries(oldProperties)) {
+      if (!isValidPropertyValue(value)) continue;
+      processedKeys.add(key);
+      const newValue = newProperties?.[key];
+      changes.push({
+        property: formatPropertyName(key),
+        oldValue: formatPropertyValue(value),
+        newValue: newValue && isValidPropertyValue(newValue) ? formatPropertyValue(newValue) : undefined,
+      });
+    }
+  }
+
+  // Process new properties not in old
+  if (newProperties) {
+    for (const [key, value] of Object.entries(newProperties)) {
+      if (processedKeys.has(key)) continue;
+      if (!isValidPropertyValue(value)) continue;
+      changes.push({
+        property: formatPropertyName(key),
+        oldValue: undefined,
+        newValue: formatPropertyValue(value),
+      });
+    }
+  }
+
+  return changes;
 }
 
 export function RevisionPanel({ revisions }: RevisionPanelProps) {
@@ -97,7 +169,7 @@ export function RevisionPanel({ revisions }: RevisionPanelProps) {
       <div className="rdv-revision-header">
         <div className="rdv-revision-stats">
           <span className="rdv-revision-stat rdv-revision-stat--total">
-            {stats.total} changes
+            {stats.total} change{stats.total !== 1 ? 's' : ''}
           </span>
           {stats.insertions > 0 && (
             <span className="rdv-revision-stat rdv-revision-stat--insertion">
@@ -136,7 +208,8 @@ export function RevisionPanel({ revisions }: RevisionPanelProps) {
       <div className="rdv-revision-list">
         {filteredRevisions.map((revision, index) => {
           const isExpanded = expandedIds.has(index);
-          const needsTruncation = revision.text.length > 100;
+          const needsTruncation = revision.text.length > 150;
+          const formatChanges = isFormatChange(revision) ? getFormatChanges(revision) : [];
 
           return (
             <div
@@ -147,29 +220,52 @@ export function RevisionPanel({ revisions }: RevisionPanelProps) {
                 <span className="rdv-revision-type">
                   {getRevisionTypeLabel(revision)}
                 </span>
-                <span className="rdv-revision-author">{revision.author}</span>
+                {isMove(revision) && revision.moveGroupId !== undefined && (
+                  <span className="rdv-revision-move-id">#{revision.moveGroupId}</span>
+                )}
+                <span className="rdv-revision-author">{revision.author || 'Unknown'}</span>
                 <span className="rdv-revision-date">{formatDate(revision.date)}</span>
               </div>
-              <div className="rdv-revision-item__content">
-                <span className="rdv-revision-text">
-                  {isExpanded ? revision.text : truncateText(revision.text)}
-                </span>
-                {needsTruncation && (
-                  <button
-                    className="rdv-revision-expand"
-                    onClick={() => toggleExpanded(index)}
-                  >
-                    {isExpanded ? 'Show less' : 'Show more'}
-                  </button>
-                )}
-              </div>
-              {isFormatChange(revision) && revision.formatChange && (
+
+              {revision.text && (
+                <div className="rdv-revision-item__content">
+                  <span className="rdv-revision-text">
+                    {isExpanded ? revision.text : truncateText(revision.text)}
+                  </span>
+                  {needsTruncation && (
+                    <button
+                      className="rdv-revision-expand"
+                      onClick={() => toggleExpanded(index)}
+                    >
+                      {isExpanded ? 'Show less' : 'Show more'}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {formatChanges.length > 0 && (
                 <div className="rdv-revision-item__format-details">
-                  {revision.formatChange.oldProperties && Object.entries(revision.formatChange.oldProperties).map(([key, value]) => (
-                    <span key={`old-${key}`}>{key}: {value} → </span>
-                  ))}
-                  {revision.formatChange.newProperties && Object.entries(revision.formatChange.newProperties).map(([key, value]) => (
-                    <span key={`new-${key}`}>{key}: {value}</span>
+                  {formatChanges.map((change, i) => (
+                    <div key={i} className="rdv-format-change">
+                      <span className="rdv-format-change__property">{change.property}</span>
+                      <span className="rdv-format-change__values">
+                        {change.oldValue && (
+                          <span className="rdv-format-change__old">{change.oldValue}</span>
+                        )}
+                        {change.oldValue && change.newValue && (
+                          <span className="rdv-format-change__arrow">→</span>
+                        )}
+                        {change.newValue && (
+                          <span className="rdv-format-change__new">{change.newValue}</span>
+                        )}
+                        {!change.oldValue && change.newValue && (
+                          <span className="rdv-format-change__added">(added)</span>
+                        )}
+                        {change.oldValue && !change.newValue && (
+                          <span className="rdv-format-change__removed">(removed)</span>
+                        )}
+                      </span>
+                    </div>
                   ))}
                 </div>
               )}

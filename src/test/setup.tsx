@@ -34,6 +34,16 @@ vi.mock('docxodus', () => ({
   isDeletion: (rev: { revisionType: string }) => rev.revisionType === 'Deleted',
   isMove: (rev: { revisionType: string }) => rev.revisionType === 'Moved',
   isFormatChange: (rev: { revisionType: string }) => rev.revisionType === 'FormatChanged',
+  getDocumentMetadata: vi.fn().mockResolvedValue({
+    sections: [{ pageWidthPt: 612, pageHeightPt: 792 }],
+    totalParagraphs: 10,
+    totalTables: 2,
+    hasFootnotes: false,
+    hasEndnotes: false,
+    hasTrackedChanges: false,
+    hasComments: false,
+    estimatedPageCount: 3,
+  }),
 }))
 
 vi.mock('docxodus/react', () => ({
@@ -53,6 +63,16 @@ vi.mock('docxodus/worker', () => ({
   createWorkerDocxodus: vi.fn().mockResolvedValue({
     convertDocxToHtml: vi.fn().mockResolvedValue('<div>Worker Mock HTML</div>'),
     getRevisions: vi.fn().mockResolvedValue([]),
+    getDocumentMetadata: vi.fn().mockResolvedValue({
+      sections: [{ pageWidthPt: 612, pageHeightPt: 792 }],
+      totalParagraphs: 10,
+      totalTables: 2,
+      hasFootnotes: false,
+      hasEndnotes: false,
+      hasTrackedChanges: false,
+      hasComments: false,
+      estimatedPageCount: 3,
+    }),
     terminate: vi.fn(),
     isActive: vi.fn().mockReturnValue(true),
   }),

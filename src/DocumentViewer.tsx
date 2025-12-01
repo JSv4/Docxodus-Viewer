@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useDocxodus, PaginatedDocument } from 'docxodus/react';
 import type { PaginationResult, Revision } from 'docxodus/react';
-import { CommentRenderMode, PaginationMode, AnnotationLabelMode } from 'docxodus';
+import { CommentRenderMode, PaginationMode, AnnotationLabelMode, getDocumentMetadata } from 'docxodus';
+import type { DocumentMetadata } from 'docxodus';
 import { createWorkerDocxodus, isWorkerSupported } from 'docxodus/worker';
 import type { WorkerDocxodus } from 'docxodus/worker';
 import type {
@@ -52,7 +53,7 @@ export function DocumentViewer({
   showRevisionsTab = true,
   placeholder = 'Open a DOCX file to view',
   wasmBasePath,
-  useWorker = false,
+  useWorker = true,
 }: DocumentViewerProps) {
   // Merge default settings
   const mergedDefaults = useMemo(
@@ -141,6 +142,9 @@ export function DocumentViewer({
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [isExtractingRevisions, setIsExtractingRevisions] = useState(false);
 
+  // Document metadata for progressive loading placeholders
+  const [documentMetadata, setDocumentMetadata] = useState<DocumentMetadata | null>(null);
+
   const paginatedContainerRef = useRef<HTMLDivElement>(null);
 
   // Build conversion options from settings
@@ -162,6 +166,20 @@ export function DocumentViewer({
     showDeletedContent: settings.showDeletedContent,
     renderMoveOperations: settings.renderMoveOperations,
   }), [settings]);
+
+  // Fetch document metadata quickly (for progressive loading placeholders)
+  const fetchMetadata = useCallback(async (fileToFetch: File) => {
+    try {
+      // Use worker's getDocumentMetadata if available, otherwise direct call
+      const metadata = useWorker && worker
+        ? await worker.getDocumentMetadata(fileToFetch)
+        : await getDocumentMetadata(fileToFetch);
+      setDocumentMetadata(metadata);
+    } catch {
+      // Metadata extraction is non-critical, silently fail
+      setDocumentMetadata(null);
+    }
+  }, [useWorker, worker]);
 
   // Extract revisions from document
   const extractRevisions = useCallback(async (fileToExtract: File) => {
@@ -190,6 +208,7 @@ export function DocumentViewer({
     setError(null);
     setRevisions([]);
     setViewMode('document');
+    // Don't reset documentMetadata here - we want to show placeholders during conversion
     onConversionStart?.();
 
     // Allow React to render loading state before heavy WASM work (only needed for non-worker mode)
@@ -233,12 +252,17 @@ export function DocumentViewer({
       setError(null);
       setCurrentPage(1);
       setTotalPages(0);
+      setDocumentMetadata(null); // Reset metadata from previous file
 
       if (controlledFile === undefined) {
         setInternalFile(selectedFile);
         setInternalHtml(null);
       }
       onFileChange?.(selectedFile);
+
+      // Fetch metadata first (fast) - this enables showing page placeholders
+      // while the full conversion runs
+      fetchMetadata(selectedFile);
 
       if (isReady && controlledHtml === undefined) {
         await convert(selectedFile);
@@ -270,6 +294,7 @@ export function DocumentViewer({
     setTotalPages(0);
     setRevisions([]);
     setViewMode('document');
+    setDocumentMetadata(null);
     onFileChange?.(null);
 
     const input = document.getElementById('rdv-file-input') as HTMLInputElement;
@@ -612,16 +637,58 @@ export function DocumentViewer({
         )}
 
         {!initError && (isLoading || isConverting) && (
-          <div className="rdv-message">
-            <div className="rdv-spinner"></div>
-            <p>
-              {isLoading && file
-                ? 'Loading engine & preparing document...'
-                : isLoading
-                ? 'Loading document engine...'
-                : 'Processing document...'}
-            </p>
-          </div>
+          documentMetadata && isConverting ? (
+            // Show page placeholders while converting
+            <div className="rdv-pages rdv-pages--loading">
+              <div className="rdv-page-placeholders" style={{ backgroundColor: '#525659' }}>
+                {Array.from({ length: documentMetadata.estimatedPageCount || 1 }).map((_, index) => {
+                  // Get section for this page (approximate - use first section if not enough)
+                  const section = documentMetadata.sections[
+                    Math.min(index, documentMetadata.sections.length - 1)
+                  ];
+                  // Calculate scaled dimensions (points to pixels, then apply scale)
+                  const scale = settings.paginationScale;
+                  const width = Math.round((section?.pageWidthPt || 612) * (96 / 72) * scale);
+                  const height = Math.round((section?.pageHeightPt || 792) * (96 / 72) * scale);
+
+                  return (
+                    <div
+                      key={index}
+                      className="rdv-page-placeholder"
+                      style={{
+                        width: `${width}px`,
+                        height: `${height}px`,
+                        marginBottom: '20px',
+                      }}
+                    >
+                      <div className="rdv-page-placeholder__shimmer" />
+                      {index === 0 && (
+                        <div className="rdv-page-placeholder__info">
+                          <div className="rdv-spinner rdv-spinner--small"></div>
+                          <span>Converting document...</span>
+                          <span className="rdv-page-placeholder__count">
+                            ~{documentMetadata.estimatedPageCount} page{documentMetadata.estimatedPageCount !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      )}
+                      <div className="rdv-page-placeholder__number">{index + 1}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="rdv-message">
+              <div className="rdv-spinner"></div>
+              <p>
+                {isLoading && file
+                  ? 'Loading engine & preparing document...'
+                  : isLoading
+                  ? 'Loading document engine...'
+                  : 'Processing document...'}
+              </p>
+            </div>
+          )
         )}
 
         {!isLoading && !initError && !html && !isConverting && !file && (

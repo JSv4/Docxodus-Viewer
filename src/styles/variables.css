@@ -7,7 +7,9 @@
   /* Viewer container */
   --rdv-border-radius: 8px;
   --rdv-background: #525659;
-  --rdv-min-height: 500px;
+  --rdv-min-height: 400px;
+  --rdv-height: 80vh;
+  --rdv-max-height: 90vh;
   --rdv-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 
   /* Toolbar */

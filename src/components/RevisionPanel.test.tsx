@@ -105,7 +105,7 @@ describe('RevisionPanel', () => {
         author: 'Test Author',
         date: '2024-01-15T10:30:00Z',
         revisionType: 'Inserted',
-        text: 'A'.repeat(150), // Text longer than 100 chars
+        text: 'A'.repeat(200), // Text longer than 150 chars
       },
     ]
 
@@ -115,7 +115,7 @@ describe('RevisionPanel', () => {
 
   it('expands text when show more is clicked', async () => {
     const user = userEvent.setup()
-    const longText = 'A'.repeat(150)
+    const longText = 'A'.repeat(200)
     const longRevision: Revision[] = [
       {
         author: 'Test Author',
