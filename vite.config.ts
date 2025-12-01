@@ -101,9 +101,10 @@ const libConfig = defineConfig({
 
 // Demo app configuration
 const demoConfig = defineConfig({
-  base: process.env.GITHUB_ACTIONS ? '/Docxodus-Viewer/' : '/',
+  base: process.env.GITHUB_ACTIONS ? '/react-docxodus-viewer/' : '/',
   plugins: [wasmPublicPlugin(), react()],
-  root: '.',
+  root: 'demo',
+  publicDir: resolve(__dirname, 'public'),
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
@@ -124,10 +125,8 @@ const demoConfig = defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 1000,
-    outDir: 'dist-demo',
-    rollupOptions: {
-      input: resolve(__dirname, 'demo/index.html'),
-    },
+    outDir: resolve(__dirname, 'dist-demo'),
+    emptyOutDir: true,
   },
 })
 
