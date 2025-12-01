@@ -48,3 +48,13 @@ vi.mock('docxodus/react', () => ({
     <div data-testid="paginated-document">{html}</div>
   ),
 }))
+
+vi.mock('docxodus/worker', () => ({
+  createWorkerDocxodus: vi.fn().mockResolvedValue({
+    convertDocxToHtml: vi.fn().mockResolvedValue('<div>Worker Mock HTML</div>'),
+    getRevisions: vi.fn().mockResolvedValue([]),
+    terminate: vi.fn(),
+    isActive: vi.fn().mockReturnValue(true),
+  }),
+  isWorkerSupported: vi.fn().mockReturnValue(true),
+}))

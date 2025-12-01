@@ -2,6 +2,8 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useDocxodus, PaginatedDocument } from 'docxodus/react';
 import type { PaginationResult, Revision } from 'docxodus/react';
 import { CommentRenderMode, PaginationMode, AnnotationLabelMode } from 'docxodus';
+import { createWorkerDocxodus, isWorkerSupported } from 'docxodus/worker';
+import type { WorkerDocxodus } from 'docxodus/worker';
 import type {
   DocumentViewerProps,
   ViewerSettings,
@@ -11,9 +13,6 @@ import type {
 } from './types';
 import { DEFAULT_SETTINGS } from './types';
 import { RevisionPanel } from './components/RevisionPanel';
-
-// Default WASM path - consumers should override this
-const DEFAULT_WASM_PATH = '/wasm/';
 
 function getCommentRenderMode(mode: CommentMode): CommentRenderMode {
   switch (mode) {
@@ -52,7 +51,8 @@ export function DocumentViewer({
   showSettingsButton = true,
   showRevisionsTab = true,
   placeholder = 'Open a DOCX file to view',
-  wasmBasePath = DEFAULT_WASM_PATH,
+  wasmBasePath,
+  useWorker = false,
 }: DocumentViewerProps) {
   // Merge default settings
   const mergedDefaults = useMemo(
@@ -75,8 +75,60 @@ export function DocumentViewer({
     [controlledSettings, mergedDefaults, internalSettings]
   );
 
-  // Docxodus hook
-  const { isReady, isLoading, error: initError, convertToHtml, getRevisions } = useDocxodus(wasmBasePath);
+  // Docxodus hook (used when not in worker mode)
+  const hookResult = useDocxodus(wasmBasePath);
+
+  // Worker instance state (used when useWorker=true)
+  const [worker, setWorker] = useState<WorkerDocxodus | null>(null);
+  const [workerReady, setWorkerReady] = useState(false);
+  const [workerLoading, setWorkerLoading] = useState(false);
+  const [workerError, setWorkerError] = useState<Error | null>(null);
+
+  // Create/destroy worker based on useWorker prop
+  const workerRef = useRef<WorkerDocxodus | null>(null);
+
+  useEffect(() => {
+    if (!useWorker || !isWorkerSupported()) {
+      return;
+    }
+
+    let cancelled = false;
+    setWorkerLoading(true);
+    setWorkerError(null);
+
+    createWorkerDocxodus({ wasmBasePath })
+      .then((workerInstance) => {
+        if (!cancelled) {
+          workerRef.current = workerInstance;
+          setWorker(workerInstance);
+          setWorkerReady(true);
+          setWorkerLoading(false);
+        } else {
+          workerInstance.terminate();
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setWorkerError(err instanceof Error ? err : new Error(String(err)));
+          setWorkerLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+        setWorker(null);
+        setWorkerReady(false);
+      }
+    };
+  }, [useWorker, wasmBasePath]);
+
+  // Unified ready/loading/error state
+  const isReady = useWorker ? workerReady : hookResult.isReady;
+  const isLoading = useWorker ? workerLoading : hookResult.isLoading;
+  const initError = useWorker ? workerError : hookResult.error;
 
   // Local UI state
   const [isConverting, setIsConverting] = useState(false);
@@ -117,7 +169,9 @@ export function DocumentViewer({
 
     setIsExtractingRevisions(true);
     try {
-      const extractedRevisions = await getRevisions(fileToExtract);
+      const extractedRevisions = useWorker && worker
+        ? await worker.getRevisions(fileToExtract)
+        : await hookResult.getRevisions(fileToExtract);
       setRevisions(extractedRevisions);
       onRevisionsExtracted?.(extractedRevisions);
     } catch {
@@ -126,7 +180,7 @@ export function DocumentViewer({
     } finally {
       setIsExtractingRevisions(false);
     }
-  }, [isReady, getRevisions, showRevisionsTab, onRevisionsExtracted]);
+  }, [isReady, useWorker, worker, hookResult, showRevisionsTab, onRevisionsExtracted]);
 
   // Convert file to HTML
   const convert = useCallback(async (fileToConvert: File) => {
@@ -138,11 +192,15 @@ export function DocumentViewer({
     setViewMode('document');
     onConversionStart?.();
 
-    // Allow React to render loading state before heavy WASM work
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    // Allow React to render loading state before heavy WASM work (only needed for non-worker mode)
+    if (!useWorker) {
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    }
 
     try {
-      const result = await convertToHtml(fileToConvert, getConvertOptions());
+      const result = useWorker && worker
+        ? await worker.convertDocxToHtml(fileToConvert, getConvertOptions())
+        : await hookResult.convertToHtml(fileToConvert, getConvertOptions());
 
       if (controlledHtml === undefined) {
         setInternalHtml(result);
@@ -158,7 +216,7 @@ export function DocumentViewer({
     } finally {
       setIsConverting(false);
     }
-  }, [isReady, convertToHtml, getConvertOptions, controlledHtml, onConversionStart, onConversionComplete, onError, extractRevisions]);
+  }, [isReady, useWorker, worker, hookResult, getConvertOptions, controlledHtml, onConversionStart, onConversionComplete, onError, extractRevisions]);
 
   // Auto-convert when WASM ready and file available
   useEffect(() => {

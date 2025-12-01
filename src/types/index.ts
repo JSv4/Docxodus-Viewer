@@ -78,8 +78,17 @@ export interface DocumentViewerProps {
   /** Placeholder text when no document is loaded */
   placeholder?: string;
 
-  /** Base path for WASM files */
+  /**
+   * Base path for WASM files.
+   * Leave undefined for auto-detection (recommended for most setups).
+   * Only specify if hosting WASM files at a custom location.
+   */
   wasmBasePath?: string;
+  /**
+   * Use Web Worker for document conversion (keeps UI responsive).
+   * Recommended for large documents. Default: false
+   */
+  useWorker?: boolean;
 }
 
 export const DEFAULT_SETTINGS: ViewerSettings = {
