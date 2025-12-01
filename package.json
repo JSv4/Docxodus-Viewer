@@ -1,18 +1,18 @@
 {
-  "name": "react-docx-viewer",
+  "name": "react-docxodus-viewer",
   "version": "0.1.0",
   "description": "A React component for viewing DOCX documents in the browser, powered by Docxodus",
   "type": "module",
-  "main": "./dist/react-docx-viewer.cjs.js",
-  "module": "./dist/react-docx-viewer.es.js",
+  "main": "./dist/react-docxodus-viewer.cjs.js",
+  "module": "./dist/react-docxodus-viewer.es.js",
   "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
-      "import": "./dist/react-docx-viewer.es.js",
-      "require": "./dist/react-docx-viewer.cjs.js"
+      "import": "./dist/react-docxodus-viewer.es.js",
+      "require": "./dist/react-docxodus-viewer.cjs.js"
     },
-    "./styles.css": "./dist/react-docx-viewer.css"
+    "./styles.css": "./dist/react-docxodus-viewer.css"
   },
   "files": [
     "dist"
@@ -31,7 +31,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/user/react-docx-viewer"
+    "url": "https://github.com/JSv4/react-docx-viewer"
+  },
+  "homepage": "https://github.com/JSv4/react-docx-viewer#readme",
+  "bugs": {
+    "url": "https://github.com/JSv4/react-docx-viewer/issues"
   },
   "keywords": [
     "react",

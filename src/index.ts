@@ -1,5 +1,5 @@
 /**
- * react-docx-viewer
+ * react-docxodus-viewer
  * A React component for viewing DOCX documents in the browser
  */
 

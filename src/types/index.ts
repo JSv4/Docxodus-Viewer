@@ -1,5 +1,5 @@
 /**
- * react-docx-viewer types
+ * react-docxodus-viewer types
  */
 
 export type CommentMode = 'disabled' | 'endnote' | 'inline' | 'margin';

@@ -70,8 +70,8 @@ const libConfig = defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      name: 'ReactDocxViewer',
-      fileName: (format) => `react-docx-viewer.${format}.js`,
+      name: 'ReactDocxodusViewer',
+      fileName: (format) => `react-docxodus-viewer.${format}.js`,
       formats: ['es', 'cjs'],
     },
     rollupOptions: {
@@ -86,7 +86,7 @@ const libConfig = defineConfig({
         },
         assetFileNames: (assetInfo) => {
           if (assetInfo.name === 'style.css') {
-            return 'react-docx-viewer.css'
+            return 'react-docxodus-viewer.css'
           }
           return assetInfo.name || 'asset'
         },
