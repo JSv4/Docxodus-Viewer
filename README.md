@@ -1,179 +1,114 @@
-# Docxodus Viewer
+# react-docxodus-viewer
 
-A client-side DOCX document viewer and comparison tool built with React. All document processing happens entirely in your browser using WebAssembly - no files are uploaded to any server.
+A React component for viewing DOCX documents in the browser, powered by [Docxodus](https://github.com/JSv4/Docxodus). All document processing happens entirely in the browser using WebAssembly - no server required.
 
-**[Live Demo](https://jsv4.github.io/Docxodus-Viewer/)** | **[Docxodus Engine](https://github.com/JSv4/Docxodus)**
+**[Live Demo](https://jsv4.github.io/react-docxodus-viewer/)** | **[Docxodus Engine](https://github.com/JSv4/Docxodus)** | **[npm](https://www.npmjs.com/package/react-docxodus-viewer)**
 
 ## Features
 
-### Document Viewer
-- Convert DOCX files to HTML for viewing in the browser
-- **Comment rendering** with multiple display modes:
-  - **Disabled** - Hide all comments
-  - **Endnotes** - Comments appear at the end with numbered references
-  - **Inline** - Comments shown as tooltips on hover
-  - **Margin** - Comments displayed in a side column
-- **Advanced options** (collapsible panel):
-  - Page title, CSS prefix, comment CSS prefix
-  - Fabricate CSS classes toggle
-  - Custom additional CSS
+- 📄 **DOCX to HTML conversion** - View Word documents directly in the browser
+- 🔄 **Web Worker support** - Non-blocking conversion in background thread (enabled by default)
+- 📊 **Progressive loading** - Page placeholders show while documents convert
+- 📝 **Tracked changes** - View insertions, deletions, moves, and formatting changes
+- 💬 **Comments** - Multiple rendering modes (endnotes, inline, margin)
+- 📑 **Pagination** - PDF.js-style page view with smooth scrolling
+- ⚙️ **Customizable** - CSS variables for theming, configurable height
 
-### Document Comparison
-- Compare two DOCX files and generate a redlined document with tracked changes
-- Visual diff with insertions (green), deletions (red), and moves (purple) highlighted
-- **Configurable comparison options:**
-  - **Detail Level** - Control comparison granularity (lower = more detailed)
-  - **Case-insensitive** - Ignore case differences when comparing
-  - **Author name** - Set the author for tracked changes
-  - **Show tracked changes** - Toggle visibility of changes in preview
-- Download the comparison result as a DOCX file with tracked changes
-
-### Revision Extraction
-- Extract structured revision data from documents with tracked changes
-- View revision details: type, author, date, and changed text
-- Summary statistics for insertions, deletions, and moves
-- **Move detection options** (collapsible panel):
-  - Enable/disable move detection
-  - Similarity threshold (50-100%)
-  - Minimum word count filter
-  - Case-insensitive matching
-- Move pair linking with group badges
-
-## Technology
-
-- **React 19** with TypeScript
-- **Vite** for fast development and optimized builds
-- **[Docxodus](https://github.com/docxodus/docxodus)** - WebAssembly-powered DOCX processing engine
-
-## Privacy
-
-All document processing happens locally in your browser. Your files never leave your device - there's no server-side processing, no uploads, and no data collection.
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-
-### Installation
+## Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/JSv4/Docxodus-Viewer.git
-cd Docxodus-Viewer
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
+npm install react-docxodus-viewer docxodus
 ```
 
-The app will be available at `http://localhost:5173`
+## Quick Start
 
-### Building for Production
+```tsx
+import { DocumentViewer } from 'react-docxodus-viewer';
+import 'react-docxodus-viewer/styles.css';
 
-```bash
-npm run build
-```
-
-The built files will be in the `dist/` directory.
-
-### Updating Docxodus
-
-When upgrading the docxodus package, you must also update the WASM files in the `public/` directory:
-
-```bash
-# 1. Update the package
-npm install docxodus@latest
-
-# 2. Copy WASM files to public directory
-rm -rf public/wasm && cp -r node_modules/docxodus/dist/wasm public/wasm
-
-# 3. Rebuild
-npm run build
-```
-
-The WASM files in `public/wasm/` are served statically and must match the installed package version.
-
-## Deployment
-
-### GitHub Pages
-
-This repository includes a GitHub Actions workflow that automatically builds and deploys to GitHub Pages on push to `main`.
-
-To enable:
-1. Go to your repository Settings > Pages
-2. Set Source to "GitHub Actions"
-3. Push to `main` branch
-
-**Important:** GitHub Pages doesn't support custom HTTP headers. The required COOP/COEP headers for SharedArrayBuffer are injected via a service worker. This is handled automatically by the build.
-
-### Netlify
-
-Add a `netlify.toml` to your repo root:
-
-```toml
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Cross-Origin-Opener-Policy = "same-origin"
-    Cross-Origin-Embedder-Policy = "require-corp"
-```
-
-### Vercel
-
-Add a `vercel.json` to your repo root:
-
-```json
-{
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
-        { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" }
-      ]
-    }
-  ]
+function App() {
+  return (
+    <DocumentViewer
+      placeholder="Select a DOCX file to view"
+    />
+  );
 }
 ```
 
-### Other Platforms
+## Props
 
-The app requires specific CORS headers for the .NET WebAssembly runtime:
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `file` | `File \| null` | - | Controlled file input |
+| `html` | `string \| null` | - | Controlled HTML output |
+| `onFileChange` | `(file: File \| null) => void` | - | Called when file changes |
+| `onConversionComplete` | `(html: string) => void` | - | Called when conversion finishes |
+| `onError` | `(error: Error) => void` | - | Called on conversion error |
+| `settings` | `ViewerSettings` | - | Controlled viewer settings |
+| `defaultSettings` | `Partial<ViewerSettings>` | - | Initial settings (uncontrolled) |
+| `toolbar` | `'top' \| 'bottom' \| 'none'` | `'top'` | Toolbar position |
+| `showSettingsButton` | `boolean` | `true` | Show settings gear icon |
+| `showRevisionsTab` | `boolean` | `true` | Show tracked changes tab |
+| `placeholder` | `string` | `'Open a DOCX file to view'` | Empty state message |
+| `useWorker` | `boolean` | `true` | Use Web Worker for conversion |
+| `wasmBasePath` | `string` | - | Custom WASM file location |
+| `className` | `string` | - | Additional CSS class |
+| `style` | `CSSProperties` | - | Inline styles |
 
+## Viewer Settings
+
+```tsx
+interface ViewerSettings {
+  commentMode: 'disabled' | 'endnote' | 'inline' | 'margin';
+  annotationMode: 'disabled' | 'above' | 'inline' | 'tooltip' | 'none';
+  paginationScale: number; // 0.3 - 2.0
+  showPageNumbers: boolean;
+  renderFootnotesAndEndnotes: boolean;
+  renderHeadersAndFooters: boolean;
+  renderTrackedChanges: boolean;
+  showDeletedContent: boolean;
+  renderMoveOperations: boolean;
+}
 ```
-Cross-Origin-Opener-Policy: same-origin
-Cross-Origin-Embedder-Policy: require-corp
+
+## CSS Customization
+
+Override CSS variables to customize the viewer:
+
+```css
+.rdv-viewer {
+  /* Height constraints */
+  --rdv-height: 80vh;
+  --rdv-min-height: 400px;
+  --rdv-max-height: 90vh;
+
+  /* Colors */
+  --rdv-background: #525659;
+  --rdv-toolbar-bg: #323639;
+  --rdv-btn-bg: #474c50;
+  --rdv-btn-color: #d4d4d4;
+}
 ```
 
-Ensure your hosting platform sets these headers. Platforms like Netlify and Vercel support custom headers via configuration files.
+## Controlled Mode
 
-## Project Structure
+For full control over state:
 
+```tsx
+function ControlledViewer() {
+  const [file, setFile] = useState<File | null>(null);
+  const [html, setHtml] = useState<string | null>(null);
+
+  return (
+    <DocumentViewer
+      file={file}
+      html={html}
+      onFileChange={setFile}
+      onConversionComplete={setHtml}
+    />
+  );
+}
 ```
-src/
-├── App.tsx                    # Main app with tab navigation
-├── App.css                    # Application styles
-├── components/
-│   ├── DocumentViewer.tsx     # DOCX to HTML conversion
-│   ├── DocumentComparer.tsx   # Two-document comparison
-│   └── RevisionViewer.tsx     # Revision extraction
-└── main.tsx                   # Entry point
-```
-
-## Docxodus Library
-
-This viewer is powered by [Docxodus](https://github.com/docxodus/docxodus), a WebAssembly library for DOCX processing. For more information about the underlying engine, including:
-
-- API documentation
-- Comment rendering architecture
-- Comparison algorithm details
-- Bundle size and browser support
-
-Visit the [Docxodus repository](https://github.com/JSv4/Docxodus).
 
 ## Browser Support
 
@@ -184,10 +119,15 @@ Visit the [Docxodus repository](https://github.com/JSv4/Docxodus).
 
 Requires WebAssembly SIMD support.
 
+## Privacy
+
+All document processing happens locally in your browser. Files are never uploaded to any server.
+
+## Related
+
+- [Docxodus](https://github.com/JSv4/Docxodus) - The WebAssembly engine powering this viewer
+- [Live Demo](https://jsv4.github.io/react-docxodus-viewer/) - Try it out
+
 ## License
 
 MIT
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
