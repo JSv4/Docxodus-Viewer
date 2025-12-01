@@ -31,11 +31,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/JSv4/react-docx-viewer"
+    "url": "https://github.com/JSv4/react-docxodus-viewer"
   },
-  "homepage": "https://github.com/JSv4/react-docx-viewer#readme",
+  "homepage": "https://github.com/JSv4/react-docxodus-viewer#readme",
   "bugs": {
-    "url": "https://github.com/JSv4/react-docx-viewer/issues"
+    "url": "https://github.com/JSv4/react-docxodus-viewer/issues"
   },
   "keywords": [
     "react",
