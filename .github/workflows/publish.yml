@@ -1,8 +1,9 @@
 name: Publish to npm
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   publish:
@@ -13,7 +14,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-      attestations: write
 
     steps:
       - name: Checkout
@@ -26,11 +26,14 @@ jobs:
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Update npm to latest (required for trusted publishers)
+        run: npm install -g npm@latest
+
       - name: Extract version from tag
         id: version
         run: |
           # Remove 'v' prefix if present (e.g., v1.0.0 -> 1.0.0)
-          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Publishing version: $VERSION"
 
@@ -49,5 +52,5 @@ jobs:
       - name: Build library
         run: npm run build:lib
 
-      - name: Publish to npm (trusted publishing)
-        run: npm publish --provenance --access public
+      - name: Publish to npm
+        run: npm publish --access public
