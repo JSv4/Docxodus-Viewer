@@ -1,6 +1,6 @@
 {
   "name": "react-docxodus-viewer",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "A React component for viewing DOCX documents in the browser, powered by Docxodus",
   "type": "module",
   "main": "./dist/react-docxodus-viewer.cjs.js",
